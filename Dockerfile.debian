@@ -1,0 +1,38 @@
+# Use Debian 12 (Bookworm) slim as the base image
+FROM debian:bookworm-slim
+
+# Set environment variables to avoid warnings
+ENV LANG C.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update package list and install dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    ffmpeg \
+    # Clean up cache to reduce image size
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a virtual environment and activate it
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Upgrade pip
+RUN pip3 install --upgrade pip
+
+# Install openai-whisper with --no-cache-dir to ensure the latest version is fetched
+RUN pip3 install --no-cache-dir openai-whisper
+
+# Set up a working directory
+WORKDIR /app
+
+# Copy the entrypoint script to the container
+COPY entrypoint.sh /entrypoint.sh
+
+# Make sure the script is executable
+RUN chmod +x /entrypoint.sh
+
+# Set the entrypoint script to be executed
+ENTRYPOINT ["/entrypoint.sh"]
